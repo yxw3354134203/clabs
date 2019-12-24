@@ -1,183 +1,157 @@
-#include<stdio.h>
-
-#include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
-#define BUFSIZE 100
-#define NUMBER  '0'
+#include <ctype.h>
 
-char buf[BUFSIZE];
-int bufp=0;
-int getch(void)
-{
-    return(bufp>0)?buf[--bufp]:getchar();
-}
-void ungetch(int c)
-{
-    if(bufp>=BUFSIZE)
-    printf("too many\n");
-    else
-    buf[bufp++]=c;
-}
-double stack[100];
-int topindex=0;
+#define MAXOP  100
+#define NUMBER  '0'
+#define MAXVAL 100
+#define BUFSIZE 100
+
+int getop(char[]);
+void push(double);
+double pop(void);
 int getch(void);
 void ungetch(int);
-int getop(char s[])
+void n(void);
+
+int sp = 0;
+double val[MAXVAL];
+char buf[BUFSIZE];
+int bufp = 0;
+
+
+
+
+void n(void){
+    sp = 0;
+}
+
+void push(double f)
 {
-    int i,c;
-    while((s[0]=c=getch())==''||c=='\t');
-    s[1]='\0';
-    i=0;
-    if(!isdigit(c)&&c!='.'&&c!='-');
-    return c;
-    if(c=='-')
+    if (sp < MAXVAL)
+     {
+         val[sp++] = f;
+     }
+     else
     {
-        if(isdigit(c=getch()))
-        s[++i]=c;
-        else{
-        if(c!=EOF){
-            ungetch(c);
-        }
-           return'-'; 
-        }
+        printf("error:stack full ,can not push %g\n",f);
     }
-    if(isdigit(c))
-    while(isdigit(s[++i]=c=getch()));
-    if(c=='.')
-    while(isdigit(s[++i]=c=getch()));
-    s[i]='\0';
-    if(c!=EOF)
-    ungetch(c);
-    return NUMBER;
-}
-void push(double a)
-{
-    if(topindex<=98)
-    {
-        stack[topindex++]=a;
-    }
-}
-else{
-    printf("full\n");
-}
 }
 double pop(void)
 {
-    if(topindex>=0)
-    {
-        return stack[--topindex];
-    }
+    if(sp > 0)
+       {
+           return val[--sp];
+       }   
     else{
-        printf("empty\n");
+        printf("error:stack empty\n");
+        return 0.0;
     }
 }
-int top(void)
+
+
+
+int getop(char s[])
 {
-    if(topindex>0)
-    {
-        return stack[topindex];
-    }
-    else{
-        printf("no number");
-        printf("/n");
-    }
-}
-void print(void)
-{
-    printf("%f\n",stack[topindex-1]);
-}
-double copy(void)
-{
-    double n;
-    if(topindex>0){
-        push(n=stack[topindex-1]);
-        return n;
-    }
-    else{
-        printf("empty\n");
-    }
-}
-int exchange()
-{
-    double op2;
-    if(topindex>1){
-        op2=stack[topindex-1];
-        stack[topindex-1]=stack[topindex-2];
-        stack[topindex-2]=op2;
-        return 1;}
-        else{
-            printf("not enough\n");
+    int i,c;
+    while ((s[0] = c = getch()) == ' ' || c == '\t')
+         ;
+         s[1] = '\0';
+         if(!isdigit(c) && c != '.')
+             return c;
+        i = 0;   
+        if(isdigit(c))
+          while (isdigit(s[++i] = c = getch()))
+              ;
+        if (c == '.')
+          while (isdigit(s[++i] = c = getch()))
+              ;
+            s[i]='\0';
+            if (c != EOF)
+               ungetch(c);
+               return NUMBER;
         }
+
+
+
+int getch(void)
+{
+    return (bufp > 0)? buf[--bufp] : getchar();
 }
-int delete(void){
-    int n;
-    if(topindex>0){
-        n=topindex=0;
-        return n;
-    }
-    else{
-        printf("empty");
-        return 0;
-    }
+void ungetch(int c)
+{
+    if (bufp >= BUFSIZE)
+         printf("ungetch:too many characters\n");
+    else
+         buf[bufp++] = c;
 }
+
 int main()
 {
-    printf("c means copy\n");
-    printf("p means print\n");
-    printf("e means exchange\n");
-    printf("d means delete\n");
     int type;
-    int op2;
-    char s[100];
-    while((type=getop(s))!=EOF)
+    double op2,op1;
+    char s[MAXVAL];
+
+    while ((type = getop(s))!= EOF)
     {
         switch(type)
         {
             case NUMBER:
-            push(atof(s));
-            break;
-            case'+':
-            push(pop()+pop());
-            break;
+               push(atof(s));
+               break;
+            case '+':
+               push(pop() + pop());
+               break;
             case'*':
-            push(pop()*pop());
-            break;
+               push(pop() * pop());
+               break;
             case'-':
-            op2=pop();
-            if(op2!=0);
-            break;
-            case'/':
-            op2=pop();
-            if(op2!=0)
-            {
-                push(pop()/op2);
-            }
-            else{
-                printf("error");
-            }
-            case'\n':
-            printf("result=%2.8g\n",pop());
-            break;
+               op2 = pop();
+               push(pop() - op2);
+               break;
             case'%':
-            op2=pop();
-            if(op2!=0)
-            push((int)pop()%(int)op2);
-            else
-            {
-                printf("error");
-            }
-            case'p':
-            print();
-            break;
-            case'c':
-            copy();
-            break;
+               op2 = pop();
+               if(op2!=0)
+               push((int)pop() % (int)op2);
+               else
+               {
+                   printf("error:zero divisor\n");
+               }
+               
+               break;
+            case'/':
+               op2 = pop();
+               if(op2 != 0.0)
+                   push(pop() / op2);
+               else
+                    printf("error:zero divisor\n");
+                break;
+            case'\n':
+                printf("\t%.8g\n",pop());
+                break;
+            default:
+                printf("error:known command %s\n",s);
+                break;   
+
+            case'q':
+                op1 = pop();
+                printf("\t%.8g\n",op1);
+                push(op1);
+                break;
+            case'w':
+                op1 = pop();
+                push(op1);
+                push(op1);
+                break;
             case'e':
-            exchange();
-            break;
-            case'd':
-            delete();
-            break;
+                op1 = pop();
+                op2 = pop();
+                push(op1);
+                push(op2);
+                break;
+            case'r':
+                n();
+                break;
         }
-    }
+    }return 0;
 }
